@@ -2,11 +2,8 @@ import cozmo
 import asyncio
 
 from colors import Colors
-from PIL import Image
 from cozmo.util import distance_mm
-from cozmo.lights import Light, Color
 from cozmo.objects import LightCube
-from cozmo.faces import Face
 
 
 # region CubeAction Class
@@ -34,18 +31,13 @@ class CubeAction:
 
             await self.robot.turn_towards_face(found_face).wait_for_completed()
 
-            # Take a photo
-            new_im = await self.robot.world.wait_for(cozmo.world.EvtNewCameraImage)
-
-            # Save the raw image as a png file
-            img_latest = self.robot.world.latest_image.raw_image
-            img_convert = img_latest.convert('L')
-            img_convert.save('cozmoPhoto.png', 'png')
+            # Grab the latest frame and save the raw image as a greyscale png file
+            img_latest = self.robot.world.latest_image.raw_image.convert('L')
+            img_latest.save('cozmoPhoto.png', 'png')
 
             await self.robot_say('You look great! I saved the image for you.')
         elif obj.cube_id == 3:
-            print(self.robot.conn.anim_names)
-            await self.robot.play_anim(name='anim_petdetection_dog_03').wait_for_completed()
+            await self.robot.play_anim(name='anim_codelab_rattle_snake_01').wait_for_completed()
         obj.set_lights(Colors.BLUE)
 
     async def robot_say(self, text):
@@ -62,9 +54,10 @@ class CubeAction:
         await self.robot.world.connect_to_cubes()
 
         # Begin looking around for objects
+        await self.robot_say('Scanning for cubes')
         look_around = self.robot.start_behavior(cozmo.behavior.BehaviorTypes.LookAroundInPlace)
 
-        # Store the found cubes' information
+        # Find the cubes and store their information
         self.cubes = await self.robot.world.wait_until_observe_num_objects(num=3, object_type=LightCube, timeout=120)
 
         look_around.stop()
@@ -88,8 +81,8 @@ class CubeAction:
 
 
 async def cozmo_program(robot: cozmo.robot.Robot):
-    cube_tapper = CubeAction(robot)
-    await cube_tapper.run()
+    cube_action = CubeAction(robot)
+    await cube_action.run()
 
     # Wait to receive keyboard interrupt command to exit (CTRL-C)
     while True:
